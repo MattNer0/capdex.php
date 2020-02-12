@@ -1,5 +1,5 @@
 # Capybara Indexer (Capdex.php)
-Index your **ALL** folder with just one file... yes, one file. Demo is located on [pbw.christianto.net](https://pbw.christianto.net)
+Index your **ALL** folder with just one file... yes, one file.
 
 # Requirements
 - PHP 7 or later
