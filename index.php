@@ -30,18 +30,18 @@ define('INDEX_NAME', '/');
  * will be crucial to detect your index file.
  */
 define('AUTODETECT_INDEX_FILELIST', [
-    'index.html',
-    'index.htm',
-    'index.php',
-    'index.py'
+	'index.html',
+	'index.htm',
+	'index.php',
+	'index.py'
 ]);
 
 /**
  * NOT ALLOWED FILE PATH (GLOBAL)
  */
 define('NOT_ALLOWED_FOLDER', [
-    'cgi-bin',
-    'error_log'
+	'cgi-bin',
+	'error_log'
 ]);
 
 /**
@@ -51,164 +51,170 @@ define('NOT_ALLOWED_FOLDER', [
 
 $_GET['q'] = isset($_GET['q'])?$_GET['q']:null;
 $not_allowed_url = [
-    "/" => "",
-    "./"=> "",
-    "../"=>"",
+	"/" => "",
+	"./"=> "",
+	"../"=>"",
 ];
 // Query Validation
-if(strpos($_GET['q'], './') || strpos($_GET['q'], '../' || $_GET['q'] == '.')){
-    $location = INDEX_NAME;
-    if($_GET['q'] == '.')
-        $_GET['q']='';
-    $location .= ltrim(str_replace(
-        key($not_allowed_url,
-        array_values($not_allowed_url),
-        $_SERVER['QUERY_STRING']), '/')
-    );
+if (strpos($_GET['q'], './') || strpos($_GET['q'], '../' || $_GET['q'] == '.')){
+	$location = INDEX_NAME;
+	if($_GET['q'] == '.')
+		$_GET['q']='';
+	$location .= ltrim(str_replace(
+		key($not_allowed_url,
+		array_values($not_allowed_url),
+		$_SERVER['QUERY_STRING']), '/')
+	);
 
-    header('Location: ' . $location);
+	header('Location: ' . $location);
+}
+
+function endsWith($haystack, $needle) {
+	return substr_compare($haystack, $needle, -strlen($needle)) === 0;
 }
 
 $checked_path = [];
 function precheck($path){
-    global $checked_path;
-    if(key_exists($path, $checked_path))
-        return $checked_path[$path];
+	global $checked_path;
+	if (key_exists($path, $checked_path))
+		return $checked_path[$path];
 
-    if($path == '/' || $path == DIRECTORY_SEPARATOR) {
-        $checked_path[$path] = true;
-        return true;
-    }
+	if ($path == '/' || $path == DIRECTORY_SEPARATOR) {
+		$checked_path[$path] = true;
+		return true;
+	}
 
-    if(basename($path)[0] == "." || 
-        in_array(basename($path), NOT_ALLOWED_FOLDER) || 
-        is_file($path . DIRECTORY_SEPARATOR . '.noindex')) {
-        
-        $checked_path[$path] = false;
-        return false;
-    }
+	if (basename($path)[0] == "." || 
+		endsWith(basename($path), '.php') ||
+		in_array(basename($path), NOT_ALLOWED_FOLDER) || 
+		is_file($path . DIRECTORY_SEPARATOR . '.noindex')) {
+		
+		$checked_path[$path] = false;
+		return false;
+	}
 
-    $checked_path[$path] = precheck(dirname($path));        
-    return $checked_path[$path];
+	$checked_path[$path] = precheck(dirname($path));
+	return $checked_path[$path];
 }
 
 function get_link($path) {
-    if(!is_dir("./" . $path))
-        return $path;
-    
-    if(AUTODETECT_INDEX)
-        foreach(AUTODETECT_INDEX_FILELIST as $idx){
-            if(is_file($path . DIRECTORY_SEPARATOR . $idx))
-                return $path;   
-        }
-    
-    return ltrim(INDEX_NAME . '?q=' . $path);
+	if (!is_dir("./" . $path))
+		return $path;
+	
+	if (AUTODETECT_INDEX)
+		foreach(AUTODETECT_INDEX_FILELIST as $idx){
+			if(is_file($path . DIRECTORY_SEPARATOR . $idx))
+				return $path;   
+		}
+	
+	return ltrim(INDEX_NAME . '?q=' . $path);
+}
+
+function usortFolderTime($a, $b) {
+    return filemtime($b) - filemtime($a);
 }
 
 // note: $path are always the full path.
 $path = __DIR__;
-if($_GET['q'])
-    $path .= DIRECTORY_SEPARATOR . $_GET['q'];
+if ($_GET['q'])
+	$path .= DIRECTORY_SEPARATOR . $_GET['q'];
 
 $folders = [];
 $folder = array_slice(scandir($path), 2);
-foreach($folder as $paths) {
-    if(!precheck($path . DIRECTORY_SEPARATOR . $paths))
-        continue;
-    $folders[] = (!empty($_GET['q'])?$_GET['q'] . DIRECTORY_SEPARATOR . $foldr:"") . $paths;
+foreach ($folder as $paths) {
+	if (!precheck($path . DIRECTORY_SEPARATOR . $paths))
+		continue;
+	$folders[] = (!empty($_GET['q'])?$_GET['q'] . DIRECTORY_SEPARATOR . $foldr:"") . $paths;
 }
+
+usort($folders, "usortFolderTime");
 
 ?><!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Index of /<?= htmlentities($_GET['q']?:'') ?></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-    <script defer src="https://use.fontawesome.com/releases/v5.0.0/js/all.js"></script>
-</head>
-<body>
-    <section class="hero is-dark">
-        <div class="hero-head">
-            <nav class="navbar">
-                <div class="container">
-                    <div class="navbar-brand">
-                    <a class="navbar-item" href="<?= htmlentities(INDEX_NAME) ?>">
-                        <?= $_SERVER['HTTP_HOST'] ?>
-                    </a>
-                </div>
-            </nav>
-        </div>
-        <div class="hero-body">
-            <div class="container">
-                <h2 class="subtitle">
-                    /<?= htmlentities($_GET['q']?:'') ?>
-                </h2>
-            </div>
-        </div>
-    </section>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+		<title>Index of /<?= htmlentities($_GET['q']?:'') ?></title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css">
+		<script defer src="https://use.fontawesome.com/releases/v5.0.0/js/all.js"></script>
+		<style>
+			.footer, .hero-body{ padding-top: 2rem; padding-bottom: 2rem; }
+			body { display: flex; flex-direction: column; min-height: 100vh; }
+			main { flex: 1; }
+		</style>
+	</head>
+	<body>
+		<section class="hero is-dark">
+			<div class="hero-head">
+				<nav class="navbar">
+					<div class="container">
+						<div class="navbar-brand">
+						<a class="navbar-item" href="<?= htmlentities(INDEX_NAME) ?>">
+							<?= $_SERVER['HTTP_HOST'] ?>
+						</a>
+					</div>
+				</nav>
+			</div>
+			<div class="hero-body">
+				<div class="container">
+					<h2 class="subtitle">
+						/<?= htmlentities($_GET['q']?:'') ?>
+					</h2>
+				</div>
+			</div>
+		</section>
 
-    <main>
-        <section class="section">
-            <div class="container">
-                <div class="content">
-                    <table class="table">
-                        <thead>
-                            <th width="30px"></th>
-                            <th>Name</th>
-                            <th>Last Modified</th>
-                            <th>Size</th>
-                        </thead>
-                        <tbody>
-                            <?php if($_GET['q'] && $_GET['q'] != '/' && $_GET['q'] != '.'): ?>
-                            <tr>
-                                <td><i class="fa fa-angle-up"></i></td>
-                                <td colspan="3"><a href="<?= htmlentities(INDEX_NAME . '?q=' . 
-                                    (dirname($_GET['q'])=="."?"":dirname($_GET['q']))) ?>"><i>Go Up</i></a></td>
-                            </tr>
-                            <?php endif; ?>
-                            <?php 
-                                foreach($folders as $foldr):
-                            ?>
-                                <?php if(is_dir($foldr)): ?>
-                                    <tr>
-                                        <td><i class="fa fa-folder"></i></td>
-                                        <td><a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a></td>
-                                        <td><?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?></td>
-                                        <td>-</td>
-                                    </tr>
-                                <?php else: ?>
-                                    <tr>
-                                        <td><i class="fa fa-file"></i></td>
-                                        <td><a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a></td>
-                                        <td><?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?></td>
-                                        <td><?= filesize($foldr)?:0 ?> bytes</td>
-                                    </tr>
-                                <?php endif; ?>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="columns">
-                <div class="column">
-                    <div class="content">
-                        Indexed by <a href="https://github.com/chez14/capdex.php"><i class="fab fa-github"></i> Capdex.php</a>. <b>Special note:</b> All timezone are localized to <b><?= htmlentities(date_default_timezone_get()) ?></b>.
-                    </div>
-                </div>
-                <div class="column has-text-right is-one-fifth">
-                    <div class="content">
-                        <a href="https://bulma.io"><img src="https://bulma.io/images/made-with-bulma.png" alt="Made with Bulma" width="128" height="24"></a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
-</body>
+		<main>
+			<section class="section">
+				<div class="container">
+					<div class="content">
+						<table class="table">
+							<thead>
+								<th width="30px"></th>
+								<th>Name</th>
+								<th>Last Modified</th>
+								<th>Size</th>
+							</thead>
+							<tbody>
+								<?php if($_GET['q'] && $_GET['q'] != '/' && $_GET['q'] != '.'): ?>
+								<tr>
+									<td><i class="fa fa-angle-up"></i></td>
+									<td colspan="3"><a href="<?= htmlentities(INDEX_NAME . '?q=' . 
+										(dirname($_GET['q'])=="."?"":dirname($_GET['q']))) ?>"><i>Go Up</i></a></td>
+								</tr>
+								<?php endif; ?>
+								<?php 
+									foreach($folders as $foldr):
+								?>
+									<?php if(is_dir($foldr)): ?>
+										<tr>
+											<td><i class="fa fa-folder"></i></td>
+											<td><a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a></td>
+											<td><?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?></td>
+											<td>-</td>
+										</tr>
+									<?php else: ?>
+										<tr>
+											<td><i class="fa fa-file"></i></td>
+											<td><a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a></td>
+											<td><?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?></td>
+											<td><?= filesize($foldr)?:0 ?> bytes</td>
+										</tr>
+									<?php endif; ?>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+		</main>
+		<footer class="footer">
+			<div class="container">
+				<div class="content has-text-centered">
+					Indexed by <a href="https://github.com/MattNer0/capdex.php"><i class="fab fa-github"></i> Capdex.php</a>. <b>Special note:</b> All timezone are localized to <b><?= htmlentities(date_default_timezone_get()) ?></b>.
+				</div>
+			</div>
+		</footer>
+	</body>
 </html>
