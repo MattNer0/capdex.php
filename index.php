@@ -142,6 +142,7 @@ usort($folders, "usortFolderTime");
 			.footer, .hero-body{ padding-top: 2rem; padding-bottom: 2rem; }
 			body { display: flex; flex-direction: column; min-height: 100vh; }
 			main { flex: 1; }
+			.thumb { width: 64px; height: 64px; display: inline-block; }
 		</style>
 	</head>
 	<body>
@@ -171,7 +172,7 @@ usort($folders, "usortFolderTime");
 					<div class="content">
 						<table class="table">
 							<thead>
-								<th width="30px"></th>
+								<th width="100px"></th>
 								<th>Name</th>
 								<th>Last Modified</th>
 								<th>Size</th>
@@ -196,7 +197,11 @@ usort($folders, "usortFolderTime");
 										</tr>
 									<?php else: ?>
 										<tr>
-											<td><i class="fa fa-file"></i></td>
+											<?php if(endsWith(basename($foldr), '.png') || endsWith(basename($foldr), '.jpg')): ?>
+												<td><img class="thumb" src="<?= htmlentities(get_link($foldr)) ?>" /></td>
+											<?php else: ?>
+												<td><i class="fa fa-file"></i></td>
+											<?php endif; ?>
 											<td><a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a></td>
 											<td><?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?></td>
 											<td><?= filesize($foldr)?:0 ?> bytes</td>
