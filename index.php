@@ -111,7 +111,13 @@ function get_link($path) {
 }
 
 function usortFolderTime($a, $b) {
-    return filemtime($b) - filemtime($a);
+	return filemtime($b) - filemtime($a);
+}
+
+function humanFilesize($bytes, $decimals = 2) {
+	$sz = 'BKMGTP';
+	$factor = floor((strlen($bytes) - 1) / 3);
+	return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . @$sz[$factor];
 }
 
 // note: $path are always the full path.
@@ -139,10 +145,15 @@ usort($folders, "usortFolderTime");
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css">
 		<script defer src="https://use.fontawesome.com/releases/v5.0.0/js/all.js"></script>
 		<style>
-			.footer, .hero-body{ padding-top: 2rem; padding-bottom: 2rem; }
+			.footer { padding-top: 2rem; padding-bottom: 2rem; }
+			.center-text { text-align: center; }
+			.right-text { text-align: right; }
+			.hero-body { padding-top: 1rem; padding-bottom: 1rem; }
+			.section { padding-left: 0.5rem; padding-right: 0.5rem; }
 			body { display: flex; flex-direction: column; min-height: 100vh; }
 			main { flex: 1; }
 			.thumb { width: 64px; height: 64px; display: inline-block; }
+			.columns-striped > .columns:nth-child(odd) { background-color: #EAEAEA; }
 		</style>
 	</head>
 	<body>
@@ -169,47 +180,57 @@ usort($folders, "usortFolderTime");
 		<main>
 			<section class="section">
 				<div class="container">
-					<div class="content">
-						<table class="table">
-							<thead>
-								<th width="100px"></th>
-								<th>Name</th>
-								<th>Last Modified</th>
-								<th>Size</th>
-							</thead>
-							<tbody>
-								<?php if($_GET['q'] && $_GET['q'] != '/' && $_GET['q'] != '.'): ?>
-								<tr>
-									<td><i class="fa fa-angle-up"></i></td>
-									<td colspan="3"><a href="<?= htmlentities(INDEX_NAME . '?q=' . 
-										(dirname($_GET['q'])=="."?"":dirname($_GET['q']))) ?>"><i>Go Up</i></a></td>
-								</tr>
-								<?php endif; ?>
-								<?php 
-									foreach($folders as $foldr):
-								?>
-									<?php if(is_dir($foldr)): ?>
-										<tr>
-											<td><i class="fa fa-folder"></i></td>
-											<td><a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a></td>
-											<td><?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?></td>
-											<td>-</td>
-										</tr>
+					<div class="content columns-striped">
+						<?php if($_GET['q'] && $_GET['q'] != '/' && $_GET['q'] != '.'): ?>
+							<div class="columns">
+								<div class="column is-1 center-text">
+									<i class="fa fa-angle-up"></i>
+								</div>
+								<div class="column is-11">
+									<a href="<?= htmlentities(INDEX_NAME . '?q=' . 
+										(dirname($_GET['q'])=="."?"":dirname($_GET['q']))) ?>"><i>Go Up</i></a>
+								</div>
+							</div>
+						<?php endif; ?>
+						<?php 
+							foreach($folders as $foldr):
+						?>
+							<?php if(is_dir($foldr)): ?>
+								<div class="columns">
+									<div class="column is-1 center-text">
+										<i class="fa fa-folder"></i>
+									</div>
+									<div class="column is-4">
+										<a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a>
+									</div>
+									<div class="column is-4 right-text">
+										<?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?>
+									</div>
+									<div class="column is-3 right-text"></div>
+								</div>
+							<?php else: ?>
+								<div class="columns">
+									<?php if(endsWith(basename($foldr), '.png') || endsWith(basename($foldr), '.jpg')): ?>
+										<div class="column is-1 center-text">
+											<img class="thumb" src="<?= htmlentities(get_link($foldr)) ?>" />
+										</div>
 									<?php else: ?>
-										<tr>
-											<?php if(endsWith(basename($foldr), '.png') || endsWith(basename($foldr), '.jpg')): ?>
-												<td><img class="thumb" src="<?= htmlentities(get_link($foldr)) ?>" /></td>
-											<?php else: ?>
-												<td><i class="fa fa-file"></i></td>
-											<?php endif; ?>
-											<td><a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a></td>
-											<td><?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?></td>
-											<td><?= filesize($foldr)?:0 ?> bytes</td>
-										</tr>
+										<div class="column is-1 center-text">
+											<i class="fa fa-file"></i>
+										</div>
 									<?php endif; ?>
-								<?php endforeach; ?>
-							</tbody>
-						</table>
+									<div class="column is-4">
+										<a href="<?= htmlentities(get_link($foldr)) ?>"><?= htmlentities(basename($foldr)) ?></a>
+									</div>
+									<div class="column is-4 right-text">
+										<?= date(DATE_TIME_FORMAT, filemtime($foldr)) ?>
+									</div>
+									<div class="column is-3 right-text">
+										<?= humanFilesize(filesize($foldr)?:0) ?>b
+									</div>
+								</div>
+							<?php endif; ?>
+						<?php endforeach; ?>
 					</div>
 				</div>
 			</section>
